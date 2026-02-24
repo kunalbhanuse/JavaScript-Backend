@@ -6,6 +6,7 @@ import { ApiResponse } from "../utils/ApiResponce.js";
 
 const registerUser = asyncHandler(async (req, res) => {
   const { username, email, fullName, password } = req.body;
+  console.log(req.body);
 
   if (
     [username, email, fullName, password].some((field) => field?.trim() === "")
@@ -13,7 +14,7 @@ const registerUser = asyncHandler(async (req, res) => {
     throw new ApiError(400, "All fields are required");
   }
   // check userExiting so get the User From model
-  const existingUser = User.findOne({
+  const existingUser = await User.findOne({
     $or: [{ username }, { email }],
   });
 
@@ -21,8 +22,17 @@ const registerUser = asyncHandler(async (req, res) => {
     throw new ApiError("409", "User with email or username Allready Exists");
   }
 
-  const avatarLocalPath = req.field?.avatar[0]?.path;
-  const coverImageLocalPath = req.field?.coverImage[0]?.path;
+  const avatarLocalPath = req.files?.avatar[0]?.path;
+  // const coverImageLocalPath = req.files?.coverImage[0]?.path;
+  // console.log("req.files =", req.files);
+  let coverImageLocalPath;
+  if (
+    req.files &&
+    Array.isArray(req.files.coverImage) &&
+    req.files.coverImage.length > 0
+  ) {
+    coverImageLocalPath = req.files.coverImage[0].path;
+  }
 
   if (!avatarLocalPath) {
     throw new ApiError(400, "avatarLocalPath is required");
@@ -36,7 +46,7 @@ const registerUser = asyncHandler(async (req, res) => {
     throw new ApiError(400, "avatar filed is required");
   }
 
-  const user = User.create({
+  const user = await User.create({
     fullName,
     avatar: avatar.url,
     coverImage: coverImage?.url || "",

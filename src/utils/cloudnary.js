@@ -12,11 +12,12 @@ const uplodeOnCloudinary = async (localFilePath) => {
   try {
     if (!localFilePath) return null;
     // uplode the File on Cloudinary
-    const response = cloudinary.uploader.upload(localFilePath, {
+    const response = await cloudinary.uploader.upload(localFilePath, {
       resource_type: "auto",
     });
     // File is uploded  succesful
-    console.log("File is uploded on Cloudinary", response);
+    console.log("File is uploded on Cloudinary");
+    fs.unlinkSync(localFilePath);
     return response;
   } catch (error) {
     fs.unlinkSync(localFilePath); // remove the locally saved temporary file as uplode failed
