@@ -8,14 +8,17 @@ const genereteAccessTokendAndRefreshToken = async (userID) => {
   try {
     const user = await User.findById(userID);
 
-    const accessToken = user.generateAccesToken();
-    const refreshToken = user.generateRefreshToken();
+    const accessToken = await user.generateAccesToken();
+    const refreshToken = await user.generateRefreshToken();
 
     user.refreshToken = refreshToken;
-    await user.save({ validateBeforeSave: false });
+    // console.log("user.refresh", user.refreshToken);
+
+    const responceDb = await user.save({ validateBeforeSave: false });
 
     return { accessToken, refreshToken };
   } catch (error) {
+    console.log("💥 THE REAL ERROR IS: ", error);
     throw new ApiError(
       500,
       "Something went wrong while generating refresh and acces tokens",
@@ -25,7 +28,7 @@ const genereteAccessTokendAndRefreshToken = async (userID) => {
 
 const registerUser = asyncHandler(async (req, res) => {
   const { username, email, fullName, password } = req.body;
-  console.log(req.body);
+  // console.log(req.body);
 
   if (
     [username, email, fullName, password].some((field) => field?.trim() === "")
@@ -94,15 +97,18 @@ const registerUser = asyncHandler(async (req, res) => {
 
 const loginUser = asyncHandler(async (req, res) => {
   const { username, password, email } = req.body;
+  // console.log(req.body);
 
-  if (!username || !email) {
+  if (!(username || email)) {
     throw new ApiError(400, "username or email is required");
   }
+  // console.log(`email:-${email} , username:-${username}`);
 
   // getting the user
   const user = await User.findOne({
     $or: [{ username }, { email }],
   });
+  // console.log("user", user);
 
   if (!user) {
     throw new ApiError(404, "User Does not exist");
@@ -115,6 +121,7 @@ const loginUser = asyncHandler(async (req, res) => {
 
   const { accessToken, refreshToken } =
     await genereteAccessTokendAndRefreshToken(user._id);
+  // console.log("tokend", accessToken, refreshToken);
   // then get the Logged in user // this is optional
   const loggedInUser = await User.findById(user._id).select(
     "-password -refreshToken",
